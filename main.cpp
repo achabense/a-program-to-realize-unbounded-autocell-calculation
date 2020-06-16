@@ -1,143 +1,143 @@
 #if 1
 /*****************************
-*2020/6/16�ع���
-*�����˲������Ż���ĳЩ����ķ��
-*��ʵ����һ���������Դ��Ľ���ͼЧ�ʡ�
-*��ָ��塣��ᵼ�´��ģ�Ĵ�������������ԡ�
-*��Ϊarea�ĸ������ܣ��ṩ���޿ռ�Ļ�ͼ�Ĺ��ܡ�
+*2020/6/16重构。
+*改善了操作，优化了某些代码的风格。
+*其实，用一个方法可以大大改进绘图效率。
+*即指针板。这会导致大规模的代码调整，所以略。
+*作为area的辅助功能，提供无限空间的绘图的功能。
 ******************************/
-#include<time.h>//Ϊ��ʵ����������������
+#include<time.h>//为了实现流畅的鼠标操作。
 #include"rule.h"
 #include"area.h"
 #pragma warning(disable:4244)
 DWORD(*p)[pwidth];
 
-/* ps:��ʵ���д��500���Ԫ��ʱ���ͱȽ������ˡ�*/
+/* ps:其实运行大概500万个元胞时，就比较慢的了。*/
 const char* proginfo = 
-"����һ��ʵ�����޿ռ�(1)Ԫ������(2)�ĳ���(3)��\n"
-"����������������ɣ�Ԫ���������(�ο�2)��BS����༭����(�ο�2)���Լ�512����༭����(�ο�2)��\n"
-"����Ԫ�����������������ִ��ģʽ���Զ�ģʽ�Ϳ���ģʽ���ֱ�֧�ֲ�ͬ�Ĳ������򿪳���ķ�������\n"
-"����(5)�������ᵼ�½��������档\n"
-"���潫ֱ�ӽ��ܼ�������еĲ����������ڴ�֮ǰ��ο����漰������Ľ���(4)��/n"
+"这是一个实现无限空间(1)元胞运算(2)的程序(3)。\n"
+"程序由三个界面组成，元胞计算界面(参考2)，BS规则编辑界面(参考2)，以及512规则编辑界面(参考2)。\n"
+"其中元胞计算界面中有两种执行模式，自动模式和控制模式，分别支持不同的操作。打开程序的方法包括\n"
+"两种(5)，但都会导致进入计算界面。\n"
+"下面将直接介绍计算界面中的操作方法，在此之前请参考界面及其参数的介绍(4)。/n"
 "\n"
-"������ģʽ�У����²���������ͬ�ģ�\n"
-">>>���ڲ�����\n"
-"wasd�����ڴ�������λ�ã�qe�����ڴ��ڴ�С��h��ʹ���ڵĳߴ������λ�ûָ�Ϊ��ʼֵ��\n"
-"��������Ĭ�ϻ���һ��Сʮ�֣�0�����Կ����͹ر�������ܡ�\n"
-">>>������������\n"
-"123��������ʱ������3��ʹ��ʱ����Ϊ1��\n"
-"zxc�����ڻ�ͼƵ�ʣ�����c��ʹ��ͼƵ�ʹ�Ϊ1��\n"
-">>>����������Q������տռ��е�Ԫ����\n"
-"���������OKLP��(5)��\n"
-">>>ճ���������\n"
-"I������ճ���巢�������Ϣ��(������(11)��)\n"
-"G������ճ���巢��һ�����й����µľ���(6)(������)�����ܻ�����ʧ��(7)��\n"
-"Z������ճ������ճ��Ԫ��(6)��(ʧ��ʱ�����塣)\n"
-">>>����������\n"
-"��Щ�����������й���༭�����ʽʵ�ֵģ�������ᵼ������(11)��\n"
-"+����ʹ���򼯵���Ϊ�װ����(8)(��ο�2)��\n"
-"%�������ƹ���ճ������(9)��\n"
-"^������ճ�����ж�ȡ����(9)��\n"
-"&��������������Ϸ����(2)��\n"
-"*������չ���(10)��\n"
+"在两种模式中，以下操作都是相同的：\n"
+">>>窗口操作：\n"
+"wasd键调节窗口中心位置，qe键调节窗口大小，h键使窗口的尺寸和中心位置恢复为初始值。\n"
+"窗口中心默认绘制一个小十字，0键可以开启和关闭这个功能。\n"
+">>>运算节奏操作：\n"
+"123键调节延时，其中3键使延时数归为1。\n"
+"zxc键调节绘图频率，其中c键使绘图频率归为1。\n"
+">>>清理操作：Q键，清空空间中的元胞。\n"
+"保存操作：OKLP键(5)。\n"
+">>>粘贴板操作：\n"
+"I键，向粘贴板发送这份信息。(会响铃(11)。)\n"
+"G键，向粘贴板发送一块现有规则下的静体(6)(会响铃)，可能会搜索失败(7)。\n"
+"Z键：从粘贴板中粘贴元胞(6)。(失败时会响铃。)\n"
+">>>其他操作：\n"
+"这些操作均是在中规则编辑面板正式实现的，大多数会导致响铃(11)。\n"
+"+键，使规则集调整为白板规则集(8)(令参考2)。\n"
+"%键：复制规则到粘贴板上(9)。\n"
+"^键：从粘贴板中读取规则(9)。\n"
+"&键：载入生命游戏规则集(2)。\n"
+"*键：清空规则集(10)。\n"
 "\n"
-"���ߵ��������ڣ�\n"
-"�����Ʋ�ͬ�����Զ�ģʽ�£�����������ʵ�ִ��ڵ���ק�����ֵ��ڴ��ڴ�С���ڿ���ģʽ�£����\n"
-"���Ҽ�ʵ�ֻ�ͼ����(Ҫ�󴰿ڳߴ粻����768)�����ֵ��ڴ��ڴ�С��\n"
-"�Զ�ģʽ��f���Ϳո���������ģʽ������ģʽ�°�f�������Զ�ģʽ�����ո��ִ��һ�����㡣����ģ\n"
-"ʽ�¾���enter���������༭���档�ӹ�����淵�أ�ͳһ���ؿ��ƽ��档\n"
+"二者的区别在于：\n"
+"鼠标机制不同。在自动模式下，鼠标右键可以实现窗口的拖拽，滚轮调节窗口大小。在控制模式下，鼠标\n"
+"左右键实现绘图功能(要求窗口尺寸不大于768)，滚轮调节窗口大小。\n"
+"自动模式按f键和空格键进入控制模式。控制模式下按f键返回自动模式，按空格键执行一步运算。两个模\n"
+"式下均按enter键进入规则编辑界面。从规则界面返回，统一返回控制界面。\n"
 "\n"
-"���ڹ�����棬���Բο������ڲ�����ʾ���в�����\n"
+"关于规则界面，可以参考界面内部的提示进行操作。\n"
 "\n"
-"\t\t\t\t\t\t\t2020/6/16 ���ߣ�irmae\n"
+"\t\t\t\t\t\t\t2020/6/16 作者：irmae\n"
 "\n"
 "<<<*1>>>\n"
-"ʵ������(rangeof int)*32��Χ�Ŀռ䡣\n"
+"实际上是(rangeof int)*32范围的空间。\n"
 "<<<*2>>>\n"
-"����Ԫ�����Ľ��ܣ�����Ͳ���ϸչ���ˣ�����Ҫ��˵��һЩ������ʵ�ֵ�Ԫ���������ʣ�����������ʹ\n"
-"��Ԫ�������˽�Ķ��������京�塣\n"
-"����������У�ÿ��Ԫ�����������ܵ�״̬��0̬��1̬����һ�ּ����У�������Ԫ����Χ��8��Ԫ������\n"
+"关于元胞机的介绍，这里就不详细展开了，仅简要地说明一些程序中实现的元胞机的性质，但还是力求使\n"
+"对元胞机不了解的读者理解其含义。\n"
+"在这个程序中，每个元胞有两个可能的状态：0态和1态。在一轮计算中，程序获得元胞周围的8个元胞，即\n"
 "XXX\n"
 "XSX\n"
-"XXX,��������Ԫ��S���ڣ�ȡ��һ��Ԫ�����ܵ�״̬(���ĳ�֮Ϊ����)������������Ԫ����һ����״̬(0��1)��\n"
-"�����Էǳ���Ȼ�ķ�ʽ������б��룬����һ������Ϊ\n"
+"XXX,包括中心元胞S在内，取这一组元胞的总的状态(后文称之为环境)，来决定中心元胞下一步的状态(0或1)。\n"
+"可以以非常自然的方式对其进行编码，假设一个环境为\n"
 "qwe\n"
 "asd\n"
-"zxc��(i��{0,1})����ֱ����ΪС�˶���������qweasdzxc������\n"
+"zxc，(i∈{0,1})可以直接视为小端二进制数字qweasdzxc。例如\n"
 "010\n"
 "110\n"
-"001���Ա���Ϊ010110001(С�˶�����)������������£����Գ�֮Ϊ״̬282(���ʮ���ƣ�����˵��ͨ\n"
-"��ʮ������),��2^1+2^3+2^4+2^8�������״̬�£���������Ԫ����Ϊj(��{0,1}),�����state[282]->i��\n"
-"��state[qweasdzxc]->jΪһ������Ԫ���ܹ���2^9=512�ֻ�����state[i]->j��i��{0,1,...,511},\n"
-"j��{0,1}�������������(����)Ԫ�������п��ܵĻ����֮Ϊ���Ԫ���Ĺ���(���²���Ϊ��������\n"
-"��֮Ϊ512����)��\n"
-"����ʵ��ʵ���У��涨�ռ�������Ԫ������ͬһ�����򼯡�������ͬ�ķ�����һ��512�����൱��һ��\n"
-"512λ�������������Ժ����׵���һ��512�ֽڵ��������洢���������ּܹ��У��ܹ���2^512��512���򼯣�\n"
-"�����嵽ʵ���ϣ���������֧����2^511�ֿ��ܣ�����state[0]->1�Ǳ���ֹ�ġ�\n"
-"���Ͼͽ�Ϊ����ؽ�����Ԫ�������ֿ���״̬���ֲ��ڶ�ά��������ռ䣬������Ϊ���ڵ�8����Ԫ����\n"
-"����Ԫ�����ù��򼯵����Ρ�������ǳ�����ʵ�ֵ����㡣���������£��±߽����ܸ�Ϊ�ռ���BS����\n"
-"�������оͰ���������������Ϸ(Game of Life)��\n"
-"BS����Ҫ����㲻����������8������Ԫ����״̬Ϊ1��Ԫ��(��Ϊ���)���������Դ�����������Ԫ��ת\n"
-"��Ϊʲô״̬����0->1Ϊ������(B)����1->0Ϊ������1->1Ϊ�����(S)���������³����������͵��´���\n"
-"�����ֱ��г��͹�����BS������ϵ���������Ĺ涨�£�������Ϸ�Ĺ���ΪB23/S3�������µı�ʾ������\n"
-"�����ܸ�������˵�������\n"
-"B&&S:0->1,1->1��\n"
-"B:0->1,1->0��\n"
-"S:0->0,1->1��\n"
-"��:0->0,1->0��\n"
-"BS�����ǵ�512���򼯵��Ӽ���֮������ô˵������ΪBS�����ܿ��Է���Ϊ512���򼯡����ﲻ�г�����\n"
-"�����������ڴ�ָ����������Ϸ���Է���Ϊ��\n"
+"001可以编码为010110001(小端二进制)。在这个例子下，可以称之为状态282(大端十进制，或者说普通\n"
+"的十进制数),即2^1+2^3+2^4+2^8。在这个状态下，假如中心元胞变为j(∈{0,1}),则记作state[282]->i。\n"
+"称state[qweasdzxc]->j为一个规则单元。总共有2^9=512种环境，state[i]->j，i∈{0,1,...,511},\n"
+"j∈{0,1}，就描述了这个(中心)元胞的所有可能的活动，称之为这个元胞的规则集(以下部分为了作区别，\n"
+"称之为512规则集)。\n"
+"在现实的实现中，规定空间中所有元胞共用同一个规则集。基于相同的方法，一个512规则集相当于一个\n"
+"512位二进制数。可以很容易地用一个512字节的数组来存储它。在这种架构中，总共有2^512种512规则集，\n"
+"而具体到实现上，这个程序仅支持了2^511种可能，其中state[0]->1是被禁止的。\n"
+"以上就较为广义地介绍了元胞有两种可能状态，分布在二维方形网格空间，环境恒为相邻的8个单元，且\n"
+"所有元胞共用规则集的情形。而这就是程序所实现的运算。在这个框架下，下边将介绍更为普及的BS规则\n"
+"集，其中就包括著名的生命游戏(Game of Life)。\n"
+"BS规则集要求计算不包括自身的8个相邻元胞中状态为1的元胞(称为活胞)的数量，以此来决定中心元胞转\n"
+"化为什么状态。称0->1为“出生(B)”，1->0为死亡，1->1为“存活(S)”。将导致出生的总数和导致存活的\n"
+"总数分别列出就构成了BS规则体系，在这样的规定下，生命游戏的规则集为B23/S3。用以下的表示方法，\n"
+"或许能更清晰地说明情况：\n"
+"B&&S:0->1,1->1。\n"
+"B:0->1,1->0。\n"
+"S:0->0,1->1。\n"
+"无:0->0,1->0。\n"
+"BS规则集是的512规则集的子集。之所以这么说，是因为BS规则集总可以翻译为512规则集。这里不列出具体\n"
+"方法，仅仅在此指出，生命游戏可以翻译为：\n"
 "00000001000101100001011101111110000101100110100001111110111010000001011001101000011111101\n"
 "11010000110100010000000111010001000000000010110011010000111111011101000011010001000000011\n"
 "10100010000000011010001000000011101000100000001000000000000000100000000000000000010110011\n"
 "01000011111101110100001101000100000001110100010000000011010001000000011101000100000001000\n"
 "00000000000010000000000000000110100010000000111010001000000010000000000000001000000000000\n"
 "0001000000000000000100000000000000000000000000000000000000000000000\n"
-"�ر�ģ������Ĭ�ϳ�ʼ�������������Ϸ��\n"
-"��BS������΢���廯(��Ȼ����512���򼯵��Ӽ�)���ڼ������ڻ����(�����Լ�)ʱͳһ����һ�����룬\n"
-"iopjklbnm,ÿλ����Ϊ0��1������\n"
+"特别的，程序的默认初始规则就是生命游戏。\n"
+"将BS规则集稍微广义化(当然还是512规则集的子集)，在计算相邻活胞数(包括自己)时统一定义一个掩码，\n"
+"iopjklbnm,每位掩码为0或1。对于\n"
 "qwe\n"
 "asd\n"
-"zxc�Ļ��������������Ϊi*q+o*w+p*e+...��������֮�����BS���򡣳���֧�ֹ���ı����Լ����ִ������\n"
-"(�������)BS���򼯵ı��롣ʵ���ϣ������ڲ�ͳһ���õ���512���򼯣��ڱ༭BS�����ͬʱ������Ὣ֮\n"
-"����Ϊ512���򼯡�����������ʣ��ڹ���ҳ���л�ʱ��BS�����л���512���治�������ʧ�����Ǵ�512����\n"
-"���ػὫ�����л������ʹ�õ�BS�����ϣ��Ӷ����ܻ���ɹ�����ʧ��\n"
-"������һ����Ȥ�Ĺ��򼯣���֧����Ԫ���ռ���ֱ�ӽ��л�ͼ���Ǿ���state[qweaXdzxc]->X������ĵ��÷���\n"
-"�μ����ġ�\n"
+"zxc的环境，活胞数计算为i*q+o*w+p*e+...，并在这之后采用BS规则。程序支持广义的编码以及这种带掩码的\n"
+"(更广义的)BS规则集的编码。实际上，程序内部统一采用的是512规则集，在编辑BS规则的同时，程序会将之\n"
+"翻译为512规则集。由于这个性质，在规则集页面切换时，BS界面切换到512界面不会造成损失，但是从512界面\n"
+"返回会将规则切换到最近使用的BS规则上，从而可能会造成规则损失。\n"
+"另外有一个有趣的规则集，它支持在元胞空间中直接进行绘图。那就是state[qweaXdzxc]->X。具体的调用方法\n"
+"参见正文。\n"
 "<<<*3>>>\n"
-"��ʽ��Ԫ���������Ƽ�Golly��\n"
+"正式的元胞机程序推荐Golly。\n"
 "<<<*4>>>\n"
-"�Ƽ��������ߵĲ���Ϊ\"����\"���ұ�Ϊ��Ϣ������Ϣ���еĲ������ϵ��°�����\n"
-"���������ڼ��μ��㡣\n"
-"��������ÿ����������32*32��Ԫ������Ϊ����ά���ռ�ĵ�Ԫ������̬ά��һ������Ԫ�������鼯�ϡ��ڻ�\n"
-"ͼ�У���������1ֵԪ��������Ͳ�����������Ļ��Ʒ�����ͬ��\n"
-"Ԫ������ָ����ֵΪ1��Ԫ��������������\n"
-"���ڳߴ磺���ڶ�Ӧ�ڼ��˼���Ԫ���Ŀռ䡣���ߴ糬��768ʱ������Ԫ����������ǳɫ����档���ڳߴ���ܵ�\n"
-"ȡֵΪ96��192��384��768��1536��3072��6144��12288��24576��\n"
-"����λ�ã�ָ���Ǵ��ڵ�����ָ�����������ꡣ\n"
-"��ʱ�����Զ�ģʽ�£�����ÿ��������i�κ��ͼ����sleepһ��ʱ�䣬�Ժ���ơ�\n"
-"��ͼƵ�ʣ�iֵ�����ֵΪ128��\n"
+"称计算界面左边的部分为\"窗口\"，右边为信息栏。信息栏中的参数从上到下包括：\n"
+"代数，即第几次计算。\n"
+"区块数，每个区块容纳32*32的元胞，作为程序维护空间的单元。程序动态维护一个包含元胞的区块集合。在绘\n"
+"图中，包含区块1值元胞的区块和不包含的区块的绘制方法不同。\n"
+"元胞数，指的是值为1的元胞的数量总数。\n"
+"窗口尺寸：窗口对应于几乘几个元胞的空间。当尺寸超过768时，含有元胞的区块用浅色块代替。窗口尺寸可能的\n"
+"取值为96，192，384，768，1536，3072，6144，12288，24576。\n"
+"中心位置：指的是窗口的中心指向的区块的坐标。\n"
+"延时：在自动模式下，程序每连续计算i次后绘图，并sleep一段时间，以毫秒计。\n"
+"绘图频率：i值。最大值为128。\n"
 "<<<*5>>>\n"
-"�������ı������,����ͼ�񱣴棬�����Զ�����ļ���ʽ���Լ�Ԫ��Ƭ��ճ����\n"
-"�ڼ�������£�P�������ڲ��ֽ�ͼ���洢ΪPNG�ļ������塣\n"
-"�����Զ�����sve�ļ���ʽ��sve�ļ�������Ԫ���ռ�Ĺ��򼯣������������ֱ���ģʽ���ֱ�Ϊȫ�屣��(O��)��\n"
-"floodfill����(L��)���Լ������ȡ����(K��)���ֱ������ڲ�ͬ�ı���Ŀ�ġ��ⶼ���ڼ��������ʵ�ֵġ�\n"
+"这个程序的保存机制,包括图像保存，程序自定义的文件格式，以及元胞片的粘贴。\n"
+"在计算界面下，P键将窗口部分截图并存储为PNG文件并响铃。\n"
+"程序自定义了sve文件格式，sve文件包含有元胞空间的规则集；并定义了三种保存模式，分别为全体保存(O键)，\n"
+"floodfill保存(L键)，以及区块截取保存(K键)，分别适用于不同的保存目的。这都是在计算界面下实现的。\n"
 "\n"
-"O����ֱ�ӱ���Ԫ���ռ�Ϊtotal-(...).sve��K/L����ʹ����ֹͣ���㣬���ȴ�������floodfill������Ʊ���\n"
-"������������鼰������(��Χ8���������)���������飬������Ϊflood-(...).sve�����鱣����Ʊ�����\n"
-"�껮���ķ��������ǵ������飬������Ϊrange-(...).sve��KL���ֹ����£����̵�qweasd����Ȼ��Ч���Ҿ�����\n"
-"������Ҽ�ȡ���������������ֹ��ܲ��ᱣ��û��Ԫ�����ļ��������۳ɹ���񣬾��ᴥ�����塣\n"
+"O键将直接保存元胞空间为total-(...).sve。K/L键将使程序停止计算，并等待操作。floodfill保存机制保存\n"
+"鼠标点击处的区块及其相邻(周围8个区块均算)的所有区块，将保存为flood-(...).sve。区块保存机制保存鼠\n"
+"标划出的方块所覆盖到的区块，并保存为range-(...).sve。KL两种功能下，键盘的qweasd键依然生效，且均可以\n"
+"按鼠标右键取消操作。以上三种功能不会保存没有元胞的文件，且无论成功与否，均会触发响铃。\n"
 "\n"
-"Z��ʵ��ճ�����ơ�����ֻ�����ı�ճ��������ʶ��ͳrle��ʽ(Ҫ��rle���ֲ�����2048),���ڲ���ʶ��Ļ��ƣ�\n"
-"��ͳһ����Ĭ��ģʽʶ�𡣰���Z��֮�󣬳���ֹͣ���㣬ʹ����ʹ�����ָ��ճ�������Ͻǣ�Ҫ�󴰿ڳߴ粻��\n"
-"��768���Ծ�ȷ��Ԫ����λ�á����԰��Ҽ�ȡ��ճ����\n"
+"Z键实现粘贴机制。程序只接受文本粘贴，可以识别传统rle格式(要求rle数字不超过2048),对于不能识别的机制，\n"
+"将统一按照默认模式识别。按过Z键之后，程序停止计算，使用者使用鼠标指定粘贴的左上角，要求窗口尺寸不大\n"
+"于768，以精确到元胞的位置。可以按右键取消粘贴。\n"
 "\n"
-"rle��ʽ�����ӣ�(ֻ֧��bo�汾)\n"
+"rle格式的例子：(只支持bo版本)\n"
 "# ark1 -- 16 cells, stabilizes at 736692 gens, found by Nick Gotts.\n"
 "x = 32, y = 29, rule = B3/S23\n"
 "27bo$28bo$29bo$28bo$27bo$29b3o20$oo$bbo$bbo$3b4o!\n"
 "\n"
-"Ĭ�ϸ�ʽ����Ч�����ӣ�(daynight����(B3678/S34678))\n"
+"默认格式下有效的例子：(daynight规则(B3678/S34678))\n"
 " ........OO..................................\n"
 " .........O..................................\n"
 " .....O...O...OO.............................\n"
@@ -151,24 +151,24 @@ const char* proginfo =
 " .....O...O...OO.............................\n"
 " .........O..................................\n"
 " ........OO..................................\n"
-"����' '��'\\t'��'.'��'\\r'����Ϊ0������'\\n'����Ϊ���У����ദ��Ϊ1����\n"
-"��ճ����Ϊ�գ���ճ���嶥����ʽ��Ϊ�ı���ʽ����ᵼ��ճ��ʧ�ܲ����塣\n"
-"���Ͻ��ܵĻ��ƣ�����Ԫ��Ƭճ������ճ��ʧ��ʱ�����⣬���ಿ�־��������塣\n"
+"程序将' '，'\\t'，'.'，'\\r'接收为0胞，将'\\n'接收为换行，其余处理为1胞。\n"
+"若粘贴板为空，或粘贴板顶部格式不为文本格式，则会导致粘贴失败并响铃。\n"
+"以上介绍的机制，除了元宝片粘贴是在粘贴失败时响铃外，其余部分均总是响铃。\n"
 "\n"
-"sve�ļ��򿪵ķ�ʽΪ��ק�򿪡����ִ򿪷�ʽʹ����ֱ�ӽ������ģʽ��ֱ�Ӵ򿪳��򣬳��������Զ�ģʽ����\n"
-"������ϷΪ��ʼ���򼯣�����������blinker(������Ϸ������)��\n"
+"sve文件打开的方式为拖拽打开。这种打开方式使程序直接进入控制模式，直接打开程序，程序会进入自动模式，以\n"
+"生命游戏为初始规则集，并分配两个blinker(生命游戏的术语)。\n"
 "<<<*6>>>\n"
-"���壺���ض������£�����һ�ּ���󱣳�ԭ����\n"
+"静体：在特定规则下，经过一轮计算后保持原样。\n"
 "<<<*7>>>\n"
-"�����ȡ���������Ʋ�һ����Ч�������Ƕ��ڴ��ھ���Ĺ��򼯡���ʧ�ܣ�����ճ���巢��һ��(fail)��\n"
+"程序采取的搜索机制不一定生效，哪怕是对于存在静体的规则集。若失败，则向粘贴板发送一个(fail)。\n"
 "<<<*8>>>\n"
-"�װ�����£��κηֲ������ھ��壬��ʹ�ó������ֱ��ά��һ��û�г�����ͼƬ��\n"
+"白板规则集下，任何分布均属于静体，这使得程序可以直接维护一份没有长宽的图片。\n"
 "<<<*9>>>\n"
-"����512���򼯵���ʽ���ݵġ�\n"
+"是以512规则集的形式传递的。\n"
 "<<<*10>>>\n"
-"state[i]->0��\n"
+"state[i]->0。\n"
 "<<<*11>>>\n"
-"���庯���ķֲ�ʮ�ֻ��ң�����ĵ����ܻ���ֽ��ܴ���\n";
+"响铃函数的分布十分混乱，这个文档可能会出现介绍错误。\n";
 
 void sendproginfo()
 {
@@ -179,7 +179,7 @@ long long generations = 0;
 long long Blocks = 0;
 long long Cells = 0;
 int startx = 0;
-int starty = 0;//���Ͻǵ����ꡣ
+int starty = 0;//左上角的坐标。
 #define maxsize (scale*8)
 #define minsize (1)
 int scalesize = scale * 4;
@@ -212,7 +212,7 @@ void pftextxy(int x, int y, const WCHAR* fmt, ...)
 	static WCHAR buffer[512] = { 0 };
 	va_list vp;
 	va_start(vp, fmt);
-	_vsnwprintf(buffer, 512, fmt, vp);//...//nΪbuffer��С��
+	_vsnwprintf(buffer, 512, fmt, vp);//...//n为buffer大小。
 	outtextxy(x, y, buffer);
 	va_end(vp);
 }
@@ -244,19 +244,19 @@ inline void extrainfo(const WCHAR* matter=nullptr)
 }
 
 
-//�ڹ�ϣ�£�ֻҪ��������̫�ߣ�Ч�ʲ����͡�
+//在哈希下，只要块数不是太高，效率并不低。
 bool centercross = true;
 void outportrait(void) {
 
 	int bitsize = scalesize / scale;
-	int gridper = PIC / scalesize;//ÿ�е�grid����
+	int gridper = PIC / scalesize;//每行的grid数。
 
-	if (scalesize >= scale) {//���ֶ�ȡ������
+	if (scalesize >= scale) {//两种读取方法。
 		for (int y = 0; y < gridper; y++)
 			for (int x = 0; x < gridper; x++)
 			{
 				int pix = x * scalesize;
-				int piy = y * scalesize;//ÿ��grid�������ʹ���ꡣ
+				int piy = y * scalesize;//每个grid网格的起使坐标。
 				grid seek = search(startx + x, starty + y);
 				if (seek != NULL && seek->lives != 0) {
 					char(*cl)[scale] = seek->cell;
@@ -286,11 +286,11 @@ void outportrait(void) {
 				}
 			}
 	}
-	else {//<scale��
-		for (int y = 0; y < gridper; y++)//������
+	else {//<scale。
+		for (int y = 0; y < gridper; y++)//交换。
 			for (int x = 0; x < gridper; x++) {
 				int pix = x * scalesize;
-				int piy = y * scalesize;//ÿ��grid�������ʹ���ꡣ
+				int piy = y * scalesize;//每个grid网格的起使坐标。
 				grid seek = search(startx + x, starty + y);
 				DWORD color;
 				if (seek != NULL)color = seek->lives != 0 ? 0xff : 0x2f;
@@ -318,8 +318,8 @@ void outportrait(void) {
 	}
 }
 /****************************
-*�ع�������Լ�����ֵ���
-*��ȷ�ԡ�
+*重构：令函数自己负责值域的
+*正确性。
 ****************************/
 void setandcolor(int mx, int my, int setas)
 {
@@ -353,8 +353,8 @@ void screenshot(void)
 	saveimage(getwname(L"screenshot", L".png"), &img);
 	BEEP();
 }
-//��Ϊ�ο�ϵͼ������ϵ��
-//�һ����Ǹ㷴�ˡ����Ǿ����ڵ���ʱ�Ե�ft��ֱ������������
+//以为参考系图像坐标系。
+//我怀疑是搞反了。但是经过在调用时对调ft，直接正常工作。
 int bicoodtodir(int xf, int yf, int xt, int yt)
 {
 	if (xf == xt && yf == yt)return center;
@@ -456,7 +456,7 @@ void commonop(int sig)
 	case '%':copyrule(); break;
 	case '^':pasterule(); break;
 	case '&':GAMIZE(); BEEP(); break;
-	case '*':CLIZE(); BEEP(); break;//�����ǲ��ó��ֵġ�����������������Ļ���Ҳ����ʵ�֡�
+	case '*':CLIZE(); BEEP(); break;//照理是不该出现的。但是如果真的有需求的话，也可以实现。
 	case '+':BOARDIZE(); BEEP(); break;
 
 	default:break;
@@ -468,7 +468,7 @@ void commonop(int sig)
 
 
 /***************
-�����ɶԳ��֣�
+经常成对出现：
 ***************/
 #define POR_IN() (outportrait(),info())
 inline void flushcontrol(void)
@@ -482,13 +482,13 @@ int main(int argc, char* argv[])
 	initgraph(pwidth, pheight);
 	p = (DWORD(*)[pwidth])GetImageBuffer();
 
-	//��ʱ�İ��ţ�
+	//暂时的安排：
 	clearall();
 	bool loadfile = false;
 	if (argc == 2 && read_from_file(argv[1]) == true) { loadfile = true; }
 	else {
 		GAMIZE();
-		/*��������������*/
+		/*分配两个闪闪。*/
 		outerset(startx + 2, starty + 2, scale / 2 - 1, scale / 2, 1);
 		outerset(startx + 2, starty + 2, scale / 2, scale / 2, 1);
 		outerset(startx + 2, starty + 2, scale / 2 + 1, scale / 2, 1);
@@ -500,11 +500,11 @@ int main(int argc, char* argv[])
 	POR_IN();
 	if (loadfile == true)goto stopping;
 
-	clock_t lasttime;//������������
+	clock_t lasttime;//辅助鼠标操作。
 	int lastx, lasty;
 	bool isactived;
 nonstopping:
-	//������ק���ܡ�
+	//添加拖拽功能。
 	lasttime = 0;
 	lastx = 0, lasty = 0;
 	isactived = false;
@@ -519,7 +519,7 @@ nonstopping:
 		{
 			int sig = getch();
 			commonop(sig);
-			if (sig == ENTER ||sig=='f'|| sig == ' ')//˫�뵥��ģʽ��
+			if (sig == ENTER ||sig=='f'|| sig == ' ')//双入单出模式。
 			{
 				if (sig == ENTER)
 				{
@@ -539,14 +539,14 @@ nonstopping:
 			else if (m.wheel > 0)
 			{
 				sizebigger();
-			}//��ק�ƶ���ͷ�����ǲ�Ҫ֧�����Ҽ��ˡ�
+			}//拖拽移动镜头。还是不要支持左右键了。
 			else if(m.mkRButton==true){
 				if (isactived == false) {
 					lastx = m.x, lasty = m.y;
 					isactived = true;
 					lasttime = clock();
 				}
-				else {//Ҫ����8����Ϊ�˽��"�������"�����⡣
+				else {//要大于8，是为了解决"过度灵活"的问题。
 					if (clock() - lasttime < 512&&clock()-lasttime>8&&!(lastx==m.x&&lasty==m.y)) {
 						scopemove(bicoodtodir(m.x, m.y,lastx, lasty));
 					}
@@ -557,16 +557,16 @@ nonstopping:
 		if (delay > 0)Sleep(delay);
 	}
 	/************************************************
-	����֮ǰ��ʵ���б�ҪŪ���Ҫ������Щ������
-	�ѵ�����CV���ơ�
-	C���ռ�ı��档�������ļ���֧������ģʽ��
-	V����ճ�����л��Ԫ��ͼ����
-	��Ӧ�ĺ�����ʵ���ˣ������׵������������������������ѡ�
-	Ҫʵ�ֽϺõĽ��档��rangesave��Ҫʵ�ַ��򡣶���������mandelbrot����ʵ���е�һ���ѵ㡣
+	在这之前，实在有必要弄清楚要进行哪些操作。
+	难点在于CV机制。
+	C：空间的保存。保存至文件。支持三种模式。
+	V：从粘贴板中获得元胞图样。
+	对应的函数都实现了，而配套的鼠标操作，反而成了最大的困难。
+	要实现较好的界面。在rangesave中要实现方框。而方框曾是mandelbrot集合实现中的一大难点。
 	*************************************************/
 stopping:
-	lasttime = 0;//������������
-	lastx = 0, lasty = 0;//��û��golly���������𡣡������ƶ�ʱ������߱�����ˡ���
+	lasttime = 0;//辅助鼠标操作。
+	lastx = 0, lasty = 0;//【没有golly的流畅级别。】【在移动时，鼠标线被打断了。】
 	isactived = false;
 	int lastldown = false;
 
@@ -582,7 +582,7 @@ stopping:
 			commonop(sig);
 			switch (sig)
 			{
-			case 'f':goto nonstopping;//f�� ' '������
+			case 'f':goto nonstopping;//f与 ' '调换。
 			case ENTER:
 				flushcontrol(),ruleedit(),POR_IN(),flushcontrol();
 				break;
@@ -669,7 +669,7 @@ void movingcross(int x, int y, int xto, int yto)
 	p[yto + 1][xto] ^= col;
 	p[yto + 2][xto] ^= col;
 }
-//��������󼸸������ˣ��Ͳ���ʲô����Ľ����ԣ��������ˡ�
+//反正是最后几个函数了，就不管什么代码的紧凑性，复用性了。
 void paste_interface(void)
 {
 	bool isacrossin = false;
@@ -679,7 +679,7 @@ void paste_interface(void)
 	while (true) {
 		bool isportrait = false;
 		bool isinfo = false;
-		if (_kbhit())//�ṩһ���ǳ����޵Ĳ������ϡ�
+		if (_kbhit())//提供一个非常有限的操作集合。
 		{
 			int sig = _getch();
 			switch (sig)
@@ -704,7 +704,7 @@ void paste_interface(void)
 					isacrossin = false;
 				}
 				break;
-			}//�Ҽ�ȡ����
+			}//右键取消。
 			if (isacrossin == false && m.x >= 2 && m.y >= 2 && m.x < PIC - 2 && m.y < pheight - 2) {
 				lastcrossx = m.x, lastcrossy = m.y;
 				isacrossin = true;
@@ -714,7 +714,7 @@ void paste_interface(void)
 				movingcross(lastcrossx, lastcrossy, m.x, m.y);
 				lastcrossx = m.x, lastcrossy = m.y;
 			}
-			if (m.mkLButton == true) {//debug:�������rawpaste�������˰�ȫ��⡣�Ż������̡�
+			if (m.mkLButton == true) {//debug:在这里和rawpaste处添加了安全检测。优化了流程。
 				if (scalesize < scale || m.x < 0 || m.y < 0 || m.x >= PIC || m.y >= PIC) { BEEP(); }
 				else {
 					if (isacrossin == true)
@@ -736,7 +736,7 @@ void paste_interface(void)
 	extrainfo();
 	flushcontrol();
 }
-//���ϱߵĶ���ֻ��һ��������
+//和上边的东西只有一丁点区别。
 void floodsave_interface(void)
 {
 	bool isacrossin = false;
@@ -746,7 +746,7 @@ void floodsave_interface(void)
 	while (true) {
 		bool isportrait = false;
 		bool isinfo = false;
-		if (_kbhit())//�ṩһ���ǳ����޵Ĳ������ϡ�
+		if (_kbhit())//提供一个非常有限的操作集合。
 		{
 			int sig = _getch();
 			switch (sig)
@@ -771,7 +771,7 @@ void floodsave_interface(void)
 					isacrossin = false;
 				}
 				break;
-			}//�Ҽ�ȡ����
+			}//右键取消。
 			if (isacrossin == false && m.x >= 2 && m.y >= 2 && m.x < PIC - 2 && m.y < pheight - 2) {
 				lastcrossx = m.x, lastcrossy = m.y;
 				isacrossin = true;
@@ -781,8 +781,8 @@ void floodsave_interface(void)
 				movingcross(lastcrossx, lastcrossy, m.x, m.y);
 				lastcrossx = m.x, lastcrossy = m.y;
 			}
-			if (m.mkLButton == true) {//debug:�������rawpaste�������˰�ȫ��⡣�Ż������̡�
-				if (m.x < 0 || m.y < 0 || m.x >= PIC || m.y >= PIC) { BEEP(); }//���û�гߴ���Ҫ��
+			if (m.mkLButton == true) {//debug:在这里和rawpaste处添加了安全检测。优化了流程。
+				if (m.x < 0 || m.y < 0 || m.x >= PIC || m.y >= PIC) { BEEP(); }//这个没有尺寸检测要求。
 				else {
 					if (isacrossin == true)
 					{
@@ -801,14 +801,14 @@ void floodsave_interface(void)
 	extrainfo();
 	flushcontrol();
 }
-//����ͱȽϵļ����ˡ�
-//�Һ�д��mand����
+//这个就比较的棘手了。
+//幸好写过mand程序。
 void rangesave_interface(void)
 {
 	setcolor(WHITE);
 	setwritemode(R2_XORPEN);
-	bool isrec = false;//���޳�����
-	int recfx = 0, recfy = 0, rectx = 0, recty = 0;	//ѡ����
+	bool isrec = false;//有无长方框。
+	int recfx = 0, recfy = 0, rectx = 0, recty = 0;	//选区。
 
 	extrainfo(L"ranged save.right click to quit.");
 	flushcontrol();	while (true)
@@ -853,7 +853,7 @@ void rangesave_interface(void)
 						rectangle(recfx, recfy, rectx, recty);
 						rectx = m.x;
 						recty = m.y;
-						//�±��ǵ�������
+						//下边是调整方框。
 						if (recfx > rectx) { int tmp = recfx; recfx = rectx; rectx = tmp; }
 						if (recfy > recty) { int tmp = recfy; recfy = recty; recty = tmp; }
 						int xf, yf,xt, yt;
