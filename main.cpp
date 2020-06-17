@@ -485,7 +485,10 @@ int main(int argc, char* argv[])
 	//暂时的安排：
 	clearall();
 	bool loadfile = false;
-	if (argc == 2 && read_from_file(argv[1]) == true) { loadfile = true; }
+	if (argc == 2 && read_from_file(argv[1]) == true) { 
+		loadfile = true;
+		blockandcell(&Blocks, &Cells);
+	}
 	else {
 		GAMIZE();
 		/*分配两个闪闪。*/
