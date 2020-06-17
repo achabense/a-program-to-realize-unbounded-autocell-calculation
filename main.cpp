@@ -226,9 +226,9 @@ void info(void)
 	pftextxy(x, y + 16 * i++, L"cells:%-20lld", Cells);
 	pftextxy(x, y + 16 * i++, L"scopesize(qe):%-12d", scale * (PIC / scalesize));
 	pftextxy(x, y + 16 * i++, L"center location(wasd):x:%d y:%d (/%d)               ", startx + PIC / (2 * scalesize), starty + PIC / (2 * scalesize), scale);
-	pftextxy(x, y + 16 * i++, L"delay(ms)(zx):%-12d", delay);
-	pftextxy(x, y + 16 * i++, L"portrait frequency(12):1/%-12d", acircfrequency);
-	pftextxy(x, y + 16 * i++, L"For more pftextxy,type 'I(upper(i))'.");
+	pftextxy(x, y + 16 * i++, L"delay(ms)(123):%-12d", delay);
+	pftextxy(x, y + 16 * i++, L"portrait frequency(zxc):1/%-12d", acircfrequency);
+	pftextxy(x, y + 16 * i++, L"For more information,type 'I(upper(i))'.");
 }
 inline void extrainfo(const WCHAR* matter=nullptr)
 {
