@@ -485,10 +485,7 @@ int main(int argc, char* argv[])
 	//暂时的安排：
 	clearall();
 	bool loadfile = false;
-	if (argc == 2 && read_from_file(argv[1]) == true) { 
-		loadfile = true;
-		blockandcell(&Blocks, &Cells);
-	}
+	if (argc == 2 && read_from_file(argv[1]) == true)loadfile = true;
 	else {
 		GAMIZE();
 		/*分配两个闪闪。*/
@@ -500,6 +497,7 @@ int main(int argc, char* argv[])
 		outerset(startx + 3, starty + 3, scale / 2, scale / 2, 1);
 		outerset(startx + 3, starty + 3, scale / 2 + 1, scale / 2, 1);
 	}
+	blockandcell(&Blocks, &Cells);
 	POR_IN();
 	if (loadfile == true)goto stopping;
 
