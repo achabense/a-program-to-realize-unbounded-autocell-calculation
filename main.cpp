@@ -606,14 +606,7 @@ stopping:
 				POR_IN();
 			}
 			else if (m.mkLButton == true || m.mkRButton == true) {
-				if (isactived == false) {
-					lastx = m.x, lasty = m.y;
-					setandcolor(m.x, m.y, m.mkLButton == true ? 1 : 0);
-					isactived = true;
-					lasttime = clock();
-					lastldown = m.mkLButton == true ? 1 : 0;
-				}
-				else {
+
 					if ((clock() - lasttime) < 100 && lastldown == (m.mkLButton == true)) {
 						linefunc(lastx, lasty, m.x, m.y, m.mkLButton == true ? 1 : 0, setandcolor);
 						lastx = m.x;
@@ -626,7 +619,6 @@ stopping:
 						setandcolor(m.x, m.y, m.mkLButton == true ? 1 : 0);
 						lasttime = clock();
 					}
-				}
 			}
 		}
 		Sleep(2);
