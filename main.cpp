@@ -13,7 +13,7 @@
 DWORD(*p)[pwidth];
 
 /* ps:其实运行大概500万个元胞时，就比较慢的了。*/
-const char* proginfo = 
+const char* proginfo =
 "这是一个实现无限空间(1)元胞运算(2)的程序(3)。\n"
 "程序由三个界面组成，元胞计算界面(参考2)，BS规则编辑界面(参考2)，以及512规则编辑界面(参考2)。\n"
 "其中元胞计算界面中有两种执行模式，自动模式和控制模式，分别支持不同的操作。打开程序的方法包括\n"
@@ -183,19 +183,22 @@ int starty = 0;//左上角的坐标。
 #define maxsize (scale*8)
 #define minsize (1)
 int scalesize = scale * 4;
-inline void sizebigger(void) { 
-	if (scalesize != scale * 8) {
-		startx += PIC / (4 * scalesize);
-		starty += PIC / (4 * scalesize);
+int perscale = PIC / scalesize;//scalesize*perscale==PIC;
+inline void sizebigger(void) {
+	if (scalesize != maxsize) {
+		startx += perscale/4;
+		starty += perscale/4;
+		scalesize = scalesize == maxsize ? maxsize : scalesize * 2;
+		perscale = PIC / scalesize;
 	}
-	scalesize = scalesize == maxsize ? maxsize : scalesize * 2; 
 }
-inline void sizesmaller(void) { 
+inline void sizesmaller(void) {
 	if (scalesize != 1) {
-		startx -= PIC / (2 * scalesize);
-		starty -= PIC / (2 * scalesize);
+		startx -= perscale / 2;
+		starty -= perscale / 2;
+		scalesize = scalesize == minsize ? minsize : scalesize / 2;
+		perscale = PIC / scalesize;
 	}
-	scalesize = scalesize == minsize ? minsize : scalesize / 2;
 }
 #define maxdelay 1024
 int delay = 1;
@@ -224,13 +227,13 @@ void info(void)
 	pftextxy(x, y + 16 * i++, L"generations:%-20lld", generations);
 	pftextxy(x, y + 16 * i++, L"blocks:%-20lld", Blocks);
 	pftextxy(x, y + 16 * i++, L"cells:%-20lld", Cells);
-	pftextxy(x, y + 16 * i++, L"scopesize(qe):%-12d", scale * (PIC / scalesize));
-	pftextxy(x, y + 16 * i++, L"center location(wasd):x:%d y:%d (/%d)               ", startx + PIC / (2 * scalesize), starty + PIC / (2 * scalesize), scale);
+	pftextxy(x, y + 16 * i++, L"scopesize(qe):%-12d", scale * perscale);
+	pftextxy(x, y + 16 * i++, L"center location(wasd):x:%d y:%d (/%d)               ", startx + perscale/2, starty + perscale/2, scale);
 	pftextxy(x, y + 16 * i++, L"delay(ms)(123):%-12d", delay);
 	pftextxy(x, y + 16 * i++, L"portrait frequency(zxc):1/%-12d", acircfrequency);
 	pftextxy(x, y + 16 * i++, L"For more information,type 'I(upper(i))'.");
 }
-inline void extrainfo(const WCHAR* matter=nullptr)
+inline void extrainfo(const WCHAR* matter = nullptr)
 {
 	const int x = PIC;
 	const int y = 16 * 9;
@@ -249,18 +252,17 @@ bool centercross = true;
 void outportrait(void) {
 
 	int bitsize = scalesize / scale;
-	int gridper = PIC / scalesize;//每行的grid数。
 
 	if (scalesize >= scale) {//两种读取方法。
-		for (int y = 0; y < gridper; y++)
-			for (int x = 0; x < gridper; x++)
+		for (int y = 0; y < perscale; y++)
+			for (int x = 0; x < perscale; x++)
 			{
 				int pix = x * scalesize;
 				int piy = y * scalesize;//每个grid网格的起使坐标。
 				grid seek = search(startx + x, starty + y);
 				if (seek != NULL && seek->lives != 0) {
 					char(*cl)[scale] = seek->cell;
-					for (int cy = 0; cy < scale; cy++) 
+					for (int cy = 0; cy < scale; cy++)
 						for (int cx = 0; cx < scale; cx++) {
 							DWORD color = cl[cy][cx] == 1 ? WHITE : 0;
 
@@ -287,8 +289,8 @@ void outportrait(void) {
 			}
 	}
 	else {//<scale。
-		for (int y = 0; y < gridper; y++)//交换。
-			for (int x = 0; x < gridper; x++) {
+		for (int y = 0; y < perscale; y++)//交换。
+			for (int x = 0; x < perscale; x++) {
 				int pix = x * scalesize;
 				int piy = y * scalesize;//每个grid网格的起使坐标。
 				grid seek = search(startx + x, starty + y);
@@ -353,70 +355,6 @@ void screenshot(void)
 	saveimage(getwname(L"screenshot", L".png"), &img);
 	BEEP();
 }
-//以为参考系图像坐标系。
-//我怀疑是搞反了。但是经过在调用时对调ft，直接正常工作。
-int bicoodtodir(int xf, int yf, int xt, int yt)
-{
-	if (xf == xt && yf == yt)return center;
-	else if (xf != xt)
-	{
-		double k = ((double)yt - yf) / ((double)xt - xf);
-		if (-0.414 <= k || k <= 0.414)
-		{//tan22.5
-			if (xf < xt)return right;
-			else return left;
-		}
-		else if (k <= -2.414 || k >= 2.414)
-		{//tan67.5
-			if (yf < yt)return down;
-			else return up;
-		}
-		else{
-			if (xf < xt)
-			{
-				if (yf < yt)return rightdown;
-				else return rightup;
-			}
-			else {
-				if (yf < yt)return leftdown;
-				else return leftup;
-			}
-		}
-	}
-	else {
-		if (yf < yt)return down;
-		else return up;
-	}
-}
-void scopemove(int pos)
-{
-	switch (pos)
-	{
-	case up:
-		starty -= scalesize >= scale ? 1 : scale / scalesize;break;
-	case down:
-		starty += scalesize >= scale ? 1 : scale / scalesize;break;
-	case left:
-		startx -= scalesize >= scale ? 1 : scale / scalesize;break;
-	case right:
-		startx += scalesize >= scale ? 1 : scale / scalesize;break;
-	case leftup:
-		startx -= scalesize >= scale ? 1 : scale / scalesize;
-		starty -= scalesize >= scale ? 1 : scale / scalesize;break;
-	case leftdown:
-		startx -= scalesize >= scale ? 1 : scale / scalesize;
-		starty += scalesize >= scale ? 1 : scale / scalesize;break;
-	case rightup:
-		startx += scalesize >= scale ? 1 : scale / scalesize;
-		starty -= scalesize >= scale ? 1 : scale / scalesize;break;
-	case rightdown:
-		startx += scalesize >= scale ? 1 : scale / scalesize;
-		starty += scalesize >= scale ? 1 : scale / scalesize;break;
-	case center:break;
-	default:throw(-1);
-	}
-}
-
 
 void paste_interface(void);
 void floodsave_interface(void);
@@ -428,30 +366,30 @@ void commonop(int sig)
 	bool isinfo = false;
 	switch (sig)
 	{
-	case 'h':startx = 0, starty = 0, scalesize = scale * 4;isportrait = isinfo = true;break;
-	case 'w':scopemove(up); isportrait = isinfo = true; break;
-	case 's':scopemove(down);isportrait = isinfo = true;break;
-	case 'a':scopemove(left);isportrait = isinfo = true;break;
-	case 'd':scopemove(right);isportrait = isinfo = true;break;
-	case 'q':sizesmaller();isportrait = isinfo = true;break;
-	case 'e':sizebigger();isportrait = isinfo = true;break;
+	case 'h':startx = 0, starty = 0, scalesize = scale * 4; perscale = PIC / scalesize; isportrait = isinfo = true; break;
+	case 'w':starty -= perscale / 3; isportrait = isinfo = true; break;
+	case 's':starty += perscale / 3; isportrait = isinfo = true; break;
+	case 'a':startx -= perscale / 3; isportrait = isinfo = true; break;
+	case 'd':startx += perscale / 3; isportrait = isinfo = true; break;
+	case 'q':sizesmaller(); isportrait = isinfo = true; break;
+	case 'e':sizebigger(); isportrait = isinfo = true; break;
 	case '0':centercross = !centercross; break;
 
-	case '1':delaysmaller();isinfo = true;break;
-	case '2':delaybigger();isinfo = true;break;
+	case '1':delaysmaller(); isinfo = true; break;
+	case '2':delaybigger(); isinfo = true; break;
 	case '3':delay = 1; isinfo = true; break;
-	case 'z':acfsmaller();isinfo = true;break;
-	case 'x':acfbigger();isinfo = true;break;
+	case 'z':acfsmaller(); isinfo = true; break;
+	case 'x':acfbigger(); isinfo = true; break;
 	case 'c':acircfrequency = 1; isinfo = true; break;
 
-	case 'O':save_as_file();BEEP(); break;
+	case 'O':save_as_file(); BEEP(); break;
 	case 'P':screenshot(); break;
 	case 'Q':clearall(); Blocks = 0, Cells = 0, isportrait = isinfo = true; break;
-	case 'G':stillgrid();break;
-	case 'I':sendproginfo();break;
-	case 'Z':paste_interface();break;
-	case 'K':rangesave_interface();break;
-	case 'L':floodsave_interface();break;
+	case 'G':stillgrid(); break;
+	case 'I':sendproginfo(); break;
+	case 'Z':paste_interface(); break;
+	case 'K':rangesave_interface(); break;
+	case 'L':floodsave_interface(); break;
 
 	case '%':copyrule(); break;
 	case '^':pasterule(); break;
@@ -502,13 +440,9 @@ int main(int argc, char* argv[])
 	if (loadfile == true)goto stopping;
 
 	clock_t lasttime;//辅助鼠标操作。
-	int lastx, lasty;
-	bool isactived;
 nonstopping:
 	//添加拖拽功能。
 	lasttime = 0;
-	lastx = 0, lasty = 0;
-	isactived = false;
 	flushcontrol();
 	for (;;) {
 		for (int i = 0; i < acircfrequency; i++) {
@@ -520,7 +454,7 @@ nonstopping:
 		{
 			int sig = getch();
 			commonop(sig);
-			if (sig == ENTER ||sig=='f'|| sig == ' ')//双入单出模式。
+			if (sig == ENTER || sig == 'f' || sig == ' ')//双入单出模式。
 			{
 				if (sig == ENTER)
 				{
@@ -536,24 +470,13 @@ nonstopping:
 			MOUSEMSG m = GetMouseMsg();
 			if (m.wheel < 0) {
 				sizesmaller();
+				POR_IN();
 			}
 			else if (m.wheel > 0)
 			{
 				sizebigger();
+				POR_IN();
 			}//拖拽移动镜头。还是不要支持左右键了。
-			else if(m.mkRButton==true){
-				if (isactived == false) {
-					lastx = m.x, lasty = m.y;
-					isactived = true;
-					lasttime = clock();
-				}
-				else {//要大于8，是为了解决"过度灵活"的问题。
-					if (clock() - lasttime < 512&&clock()-lasttime>8&&!(lastx==m.x&&lasty==m.y)) {
-						scopemove(bicoodtodir(m.x, m.y,lastx, lasty));
-					}
-					lastx = m.x; lasty = m.y; lasttime = clock();
-				}
-			}
 		}
 		if (delay > 0)Sleep(delay);
 	}
@@ -567,8 +490,7 @@ nonstopping:
 	*************************************************/
 stopping:
 	lasttime = 0;//辅助鼠标操作。
-	lastx = 0, lasty = 0;//【没有golly的流畅级别。】【在移动时，鼠标线被打断了。】
-	isactived = false;
+	int lastx = 0,lasty = 0;//【没有golly的流畅级别。】【在移动时，鼠标线被打断了。】
 	int lastldown = false;
 
 	int vcalled = false;
@@ -585,16 +507,16 @@ stopping:
 			{
 			case 'f':goto nonstopping;//f与 ' '调换。
 			case ENTER:
-				flushcontrol(),ruleedit(),POR_IN(),flushcontrol();
+				flushcontrol(), ruleedit(), POR_IN(), flushcontrol();
 				break;
 			case ' ':
-				acirc(&Blocks, &Cells),generations++,POR_IN();
+				acirc(&Blocks, &Cells), generations++, POR_IN();
 				break;
 			default:break;
 			}
 		}
 
-		while(MouseHit()==true) {
+		while (MouseHit() == true) {
 			MOUSEMSG m = GetMouseMsg();
 			if (m.wheel < 0) {
 				sizesmaller();
@@ -607,23 +529,25 @@ stopping:
 			}
 			else if (m.mkLButton == true || m.mkRButton == true) {
 
-					if ((clock() - lasttime) < 100 && lastldown == (m.mkLButton == true)) {
-						linefunc(lastx, lasty, m.x, m.y, m.mkLButton == true ? 1 : 0, setandcolor);
-						lastx = m.x;
-						lasty = m.y;
-						lasttime = clock();
-					}
-					else {
-						lastx = m.x, lasty = m.y;
-						lastldown = m.mkLButton == true ? 1 : 0;
-						setandcolor(m.x, m.y, m.mkLButton == true ? 1 : 0);
-						lasttime = clock();
-					}
+				if ((clock() - lasttime) < 100 && lastldown == (m.mkLButton == true)) {
+					linefunc(lastx, lasty, m.x, m.y, m.mkLButton == true ? 1 : 0, setandcolor);
+					lastx = m.x;
+					lasty = m.y;
+					lasttime = clock();
+				}
+				else {
+					lastx = m.x, lasty = m.y;
+					lastldown = m.mkLButton == true ? 1 : 0;
+					setandcolor(m.x, m.y, m.mkLButton == true ? 1 : 0);
+					lasttime = clock();
+				}
 			}
 		}
 		Sleep(2);
 	}
 }
+
+
 class cross
 {
 	static const DWORD color = WHITE;
@@ -673,10 +597,10 @@ void paste_interface(void)
 			int sig = _getch();
 			switch (sig)
 			{
-			case'w':scopemove(up); isportrait = isinfo = true; break;
-			case 's':scopemove(down); isportrait = isinfo = true; break;
-			case 'a':scopemove(left); isportrait = isinfo = true; break;
-			case 'd':scopemove(right); isportrait = isinfo = true; break;
+			case 'w':starty -= perscale / 3; isportrait = isinfo = true; break;
+			case 's':starty += perscale / 3; isportrait = isinfo = true; break;
+			case 'a':startx -= perscale / 3; isportrait = isinfo = true; break;
+			case 'd':startx += perscale / 3; isportrait = isinfo = true; break;
 			case 'q':sizesmaller(); isportrait = isinfo = true; break;
 			case 'e':sizebigger(); isportrait = isinfo = true; break;
 			default:break;
@@ -721,10 +645,10 @@ void floodsave_interface(void)
 			int sig = _getch();
 			switch (sig)
 			{
-			case'w':scopemove(up); isportrait = isinfo = true; break;
-			case 's':scopemove(down); isportrait = isinfo = true; break;
-			case 'a':scopemove(left); isportrait = isinfo = true; break;
-			case 'd':scopemove(right); isportrait = isinfo = true; break;
+			case 'w':starty -= perscale / 3; isportrait = isinfo = true; break;
+			case 's':starty += perscale / 3; isportrait = isinfo = true; break;
+			case 'a':startx -= perscale / 3; isportrait = isinfo = true; break;
+			case 'd':startx += perscale / 3; isportrait = isinfo = true; break;
 			case 'q':sizesmaller(); isportrait = isinfo = true; break;
 			case 'e':sizebigger(); isportrait = isinfo = true; break;
 			default:break;
@@ -754,6 +678,8 @@ void floodsave_interface(void)
 	extrainfo();
 	flushcontrol();
 }
+//这个就比较的棘手了。
+//幸好写过mand程序。
 void rangesave_interface(void)
 {
 	setcolor(WHITE);
@@ -807,11 +733,11 @@ void rangesave_interface(void)
 						//下边是调整方框。
 						if (recfx > rectx) { int tmp = recfx; recfx = rectx; rectx = tmp; }
 						if (recfy > recty) { int tmp = recfy; recfy = recty; recty = tmp; }
-						int xf, yf,xt, yt;
-						xf = startx+recfx / scalesize - 1;
-						yf = starty+recfy / scalesize - 1;
-						xt = startx+rectx / scalesize + 1;
-						yt = starty+recty / scalesize + 1;
+						int xf, yf, xt, yt;
+						xf = startx + recfx / scalesize - 1;
+						yf = starty + recfy / scalesize - 1;
+						xt = startx + rectx / scalesize + 1;
+						yt = starty + recty / scalesize + 1;
 						save_as_file_ranged(xf, yf, xt, yt);
 						BEEP();
 						goto out;
@@ -827,10 +753,10 @@ void rangesave_interface(void)
 			int sig = _getch();
 			switch (sig)
 			{
-			case'w':scopemove(up); port = true; break;
-			case 's':scopemove(down); port = true; break;
-			case 'a':scopemove(left); port = true; break;
-			case 'd':scopemove(right); port = true; break;
+			case 'w':starty -= perscale / 3; port = true; break;
+			case 's':starty += perscale / 3; port = true; break;
+			case 'a':startx -= perscale / 3; port = true; break;
+			case 'd':startx += perscale / 3; port = true; break;
 			case 'q':sizesmaller(); port = true; break;
 			case 'e':sizebigger(); port = true; break;
 			default:break;
