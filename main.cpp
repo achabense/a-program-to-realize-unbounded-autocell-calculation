@@ -624,49 +624,45 @@ stopping:
 		Sleep(2);
 	}
 }
-
-
-#define col WHITE
-void movingcross(int x, int y)
+class cross
 {
-	p[y][x - 2] ^= col;
-	p[y][x - 1] ^= col;
-	p[y][x - 0] ^= col;
-	p[y][x + 1] ^= col;
-	p[y][x + 2] ^= col;
-
-	p[y - 2][x] ^= col;
-	p[y - 1][x] ^= col;
-	p[y + 1][x] ^= col;
-	p[y + 2][x] ^= col;
-}
-void movingcross(int x, int y, int xto, int yto)
-{
-	p[y][x - 2] ^= col;
-	p[y][x - 1] ^= col;
-	p[y][x - 0] ^= col;
-	p[y][x + 1] ^= col;
-	p[y][x + 2] ^= col;
-	p[y - 2][x] ^= col;
-	p[y - 1][x] ^= col;
-	p[y + 1][x] ^= col;
-	p[y + 2][x] ^= col;
-
-	p[yto][xto - 2] ^= col;
-	p[yto][xto - 1] ^= col;
-	p[yto][xto - 0] ^= col;
-	p[yto][xto + 1] ^= col;
-	p[yto][xto + 2] ^= col;
-	p[yto - 2][xto] ^= col;
-	p[yto - 1][xto] ^= col;
-	p[yto + 1][xto] ^= col;
-	p[yto + 2][xto] ^= col;
-}
+	static const DWORD color = WHITE;
+	DWORD* p;
+	int wid, hig;
+	int x, y;
+public:
+	cross(DWORD* pp, int pwid, int phig) :p(pp), wid(pwid), hig(phig), x(pwid / 2), y(phig / 2)
+	{
+		makecross(x, y);
+	}
+	void operator()(int nx, int ny)
+	{
+		makecross(x, y);
+		x = nx, y = ny;
+		makecross(x, y);
+	}
+	void operator()(void)
+	{
+		makecross(x, y);//【例如图像被覆盖，就需要这种情况。】
+	}
+private:
+	void makepix(int dx, int dy)
+	{
+		if (dx >= 0 && dx < wid && dy >= 0 && dy < hig)
+		{
+			p[dy * wid + dx] ^= color;
+		}
+	}
+	void makecross(int cx, int cy)
+	{
+		makepix(cx, cy - 2); makepix(cx, cy - 1); makepix(cx, cy + 1); makepix(cx, cy + 2);
+		makepix(cx - 2, cy); makepix(cx - 1, cy); makepix(cx, cy); makepix(cx + 1, cy); makepix(cx + 2, cy);
+	}
+};
 //反正是最后几个函数了，就不管什么代码的紧凑性，复用性了。
 void paste_interface(void)
 {
-	bool isacrossin = false;
-	int lastcrossx = 0, lastcrossy = 0;
+	cross cro(GetImageBuffer(), pwidth, pheight);
 	extrainfo(L"paste from clipboard.right click to quit.");
 	flushcontrol();
 	while (true) {
@@ -686,37 +682,19 @@ void paste_interface(void)
 			default:break;
 			}
 		}
-		if (isportrait == true) { isacrossin = false; outportrait(); }
+		if (isportrait == true) { outportrait(); cro(); }//cro():刷新十字。
 		if (isinfo == true)info();
 		if (MouseHit()) {
 			MOUSEMSG m = GetMouseMsg();
 			if (m.mkRButton == true) {
-				if (isacrossin == true)
-				{
-					movingcross(lastcrossx, lastcrossy);
-					isacrossin = false;
-				}
+				cro();
 				break;
 			}//右键取消。
-			if (isacrossin == false && m.x >= 2 && m.y >= 2 && m.x < PIC - 2 && m.y < pheight - 2) {
-				lastcrossx = m.x, lastcrossy = m.y;
-				isacrossin = true;
-				movingcross(lastcrossx, lastcrossy);
-			}
-			else if (m.x >= 2 && m.y >= 2 && m.x < PIC - 2 && m.y < pheight - 2) {
-				movingcross(lastcrossx, lastcrossy, m.x, m.y);
-				lastcrossx = m.x, lastcrossy = m.y;
-			}
-			if (m.mkLButton == true) {//debug:在这里和rawpaste处添加了安全检测。优化了流程。
+			cro(m.x, m.y);
+			if (m.mkLButton == true) {
 				if (scalesize < scale || m.x < 0 || m.y < 0 || m.x >= PIC || m.y >= PIC) { BEEP(); }
 				else {
-					if (isacrossin == true)
-					{
-						movingcross(lastcrossx, lastcrossy);
-						isacrossin = false;
-					}
 					int bitsize = scalesize / scale;
-
 					if (patternpaste(startx + m.x / scalesize, starty + m.y / scalesize, (m.x % scalesize) / bitsize, (m.y % scalesize) / bitsize) == false)BEEP();
 					blockandcell(&Blocks, &Cells);
 					POR_IN();
@@ -724,7 +702,7 @@ void paste_interface(void)
 				}
 			}
 		}
-		Sleep(1);
+		Sleep(2);
 	}
 	extrainfo();
 	flushcontrol();
@@ -732,8 +710,7 @@ void paste_interface(void)
 //和上边的东西只有一丁点区别。
 void floodsave_interface(void)
 {
-	bool isacrossin = false;
-	int lastcrossx = 0, lastcrossy = 0;
+	cross cro(GetImageBuffer(), pwidth, pheight);
 	extrainfo(L"floodfill save.right click to quit.");
 	flushcontrol();
 	while (true) {
@@ -753,38 +730,21 @@ void floodsave_interface(void)
 			default:break;
 			}
 		}
-		if (isportrait == true) { isacrossin = false; outportrait(); }
+		if (isportrait == true) { outportrait(); cro(); }
 		if (isinfo == true)info();
 		if (MouseHit()) {
 			MOUSEMSG m = GetMouseMsg();
 			if (m.mkRButton == true) {
-				if (isacrossin == true)
-				{
-					movingcross(lastcrossx, lastcrossy);
-					isacrossin = false;
-				}
+				cro();
 				break;
-			}//右键取消。
-			if (isacrossin == false && m.x >= 2 && m.y >= 2 && m.x < PIC - 2 && m.y < pheight - 2) {
-				lastcrossx = m.x, lastcrossy = m.y;
-				isacrossin = true;
-				movingcross(lastcrossx, lastcrossy);
-			}
-			else if (m.x >= 2 && m.y >= 2 && m.x < PIC - 2 && m.y < pheight - 2) {
-				movingcross(lastcrossx, lastcrossy, m.x, m.y);
-				lastcrossx = m.x, lastcrossy = m.y;
-			}
+			}//取消。
+			cro(m.x, m.y);
 			if (m.mkLButton == true) {//debug:在这里和rawpaste处添加了安全检测。优化了流程。
 				if (m.x < 0 || m.y < 0 || m.x >= PIC || m.y >= PIC) { BEEP(); }//这个没有尺寸检测要求。
 				else {
-					if (isacrossin == true)
-					{
-						movingcross(lastcrossx, lastcrossy);
-						isacrossin = false;
-					}
-
 					save_as_file_flood(startx + m.x / scalesize, starty + m.y / scalesize);
 					BEEP();
+					cro();
 					break;
 				}
 			}
@@ -794,8 +754,6 @@ void floodsave_interface(void)
 	extrainfo();
 	flushcontrol();
 }
-//这个就比较的棘手了。
-//幸好写过mand程序。
 void rangesave_interface(void)
 {
 	setcolor(WHITE);
